@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ফ্যাসিজম ট্র্যাকার</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans Bengali', sans-serif; margin: 20px; background: #f4f6f8; color: #2c3e50; transition: background 0.3s, color 0.3s; }
+    h1 { font-size: 2.5rem; color: #2c3e50; text-align: center; margin-bottom: 30px; }
+    .question-box { display: none; margin-bottom: 20px; border: 1px solid #ccc; padding: 20px; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .question-box.active { display: block; }
+    .result { font-size: 2.2em; font-weight: bold; margin-top: 30px; text-align: center; }
+    .toggle-theme, .poll-selector { margin-bottom: 20px; padding: 10px 20px; cursor: pointer; background: #2980b9; color: white; border: none; border-radius: 5px; display: block; margin-left: auto; margin-right: auto; }
+    .share-buttons { margin-top: 20px; text-align: center; }
+    .share-buttons button { margin: 5px; padding: 10px 15px; border: none; border-radius: 5px; background: #3498db; color: white; cursor: pointer; }
+    .dark-mode { background: #1e1e1e; color: #f4f4f4; }
+    .dark-mode .question-box { background: #2c2c2c; border-color: #555; }
+    .dark-mode .result { color: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h1>🧭 ফ্যাসিজম ট্র্যাকার</h1>
+  <button class="toggle-theme" onclick="toggleTheme()">থিম বদলান</button>
+  <select class="poll-selector" id="pollSelect" onchange="loadPoll()">
+    <option value="default">ফ্যাসিজম মূল্যায়ন</option>
+    <option value="custom">ব্যক্তিগত মতামত জরিপ</option>
+  </select>
+  <div id="questions"></div>
+  <div class="result" id="result"></div>
+  <div class="share-buttons" id="shareSection" style="display:none">
+    <p>ফলাফল শেয়ার করুন:</p>
+    <button onclick="share('facebook')">Facebook</button>
+    <button onclick="share('twitter')">Twitter</button>
+    <button onclick="share('whatsapp')">WhatsApp</button>
+  </div>
+
+  <script>
+    const polls = {
+      default: [
+        "বিরোধী দলের কার্যক্রম আইন করে নিষিদ্ধ করা উচিত।",
+        "রাষ্ট্রের সমালোচনা করলে শাস্তি হওয়া উচিত।",
+        "একজন শক্তিশালী নেতা যিনি সব সিদ্ধান্ত একাই নেন, তিনি গণতন্ত্রের চেয়ে ভালো।",
+        "সব নাগরিককে রাষ্ট্রীয় মতাদর্শের প্রতি আনুগত্য দেখানো উচিত।",
+        "ভোট ছাড়া বা নির্বাচনের বাইরে রাষ্ট্র পরিচালনা সম্ভব।",
+        "সেনাবাহিনী বা আইনশৃঙ্খলা বাহিনীর মাধ্যমে শান্তি প্রতিষ্ঠা করাই উত্তম।",
+        "ধর্মীয় বা জাতিগত সংখ্যালঘুদের রাজনৈতিক ক্ষমতা সীমিত রাখা উচিত।",
+        "নির্দিষ্ট কিছু মিডিয়া নিষিদ্ধ করা উচিত যদি তারা রাষ্ট্র বা সরকারবিরোধী রিপোর্ট করে।",
+        "জাতীয়তাবাদ যেকোনো দিক থেকে ব্যক্তিগত স্বাধীনতার চেয়ে গুরুত্বপূর্ণ।",
+        "একদলীয় শাসন দীর্ঘমেয়াদে জাতির জন্য উপকারী।"
+      ],
+      custom: [
+        "আপনি কি মনে করেন সরকার ডিজিটাল নিরাপত্তা আইনের অপব্যবহার করে?",
+        "সাংবাদিকদের স্বাধীনতা কি বর্তমানে হুমকির মুখে?",
+        "নাগরিকদের ফেসবুক পোস্টের জন্য গ্রেপ্তার কতটা যৌক্তিক?"
+      ]
+    };
+
+    let currentQuestion = 0;
+    let answers = [];
+    let selectedPoll = polls.default;
+    const container = document.getElementById('questions');
+
+    function renderQuestion(index) {
+      const qBox = document.createElement('div');
+      qBox.classList.add('question-box', 'active');
+      qBox.innerHTML = `
+        <p><strong>প্রশ্ন ${index + 1}:</strong> ${selectedPoll[index]}</p>
+        <label><input type="radio" name="q${index}" value="2"> হ্যাঁ</label><br>
+        <label><input type="radio" name="q${index}" value="1"> মন্তব্য নেই</label><br>
+        <label><input type="radio" name="q${index}" value="0"> না</label><br><br>
+        <button onclick="nextQuestion(${index})">পরবর্তী</button>
+      `;
+      container.innerHTML = '';
+      container.appendChild(qBox);
+    }
+
+    function nextQuestion(index) {
+      const selected = document.querySelector(`input[name='q${index}']:checked`);
+      if (!selected) {
+        alert('উত্তর নির্বাচন করুন');
+        return;
+      }
+      answers.push(parseInt(selected.value));
+      currentQuestion++;
+      if (currentQuestion < selectedPoll.length) {
+        renderQuestion(currentQuestion);
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      const score = answers.reduce((a, b) => a + b, 0);
+      let message = '';
+      if (selectedPoll === polls.default) {
+        if (score <= 5) message = '🟢 গণতান্ত্রিক মানসিকতা';
+        else if (score <= 10) message = '🟡 মিশ্র/অনিশ্চিত অবস্থান';
+        else if (score <= 15) message = '🟠 কর্তৃত্ববাদী প্রবণতা';
+        else message = '🔴 ফ্যাসিবাদী ঝোঁক প্রবলভাবে বিদ্যমান';
+      } else {
+        message = `আপনার স্কোর: ${score} / ${selectedPoll.length * 2}`;
+      }
+      document.getElementById('questions').style.display = 'none';
+      document.getElementById('result').innerText = message;
+      document.getElementById('shareSection').style.display = 'block';
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function share(platform) {
+      const text = encodeURIComponent(document.getElementById('result').innerText);
+      const url = encodeURIComponent(window.location.href);
+      let shareUrl = '';
+      if (platform === 'facebook') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
+      if (platform === 'twitter') shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+      if (platform === 'whatsapp') shareUrl = `https://api.whatsapp.com/send?text=${text}%20${url}`;
+      window.open(shareUrl, '_blank');
+    }
+
+    function loadPoll() {
+      const selected = document.getElementById('pollSelect').value;
+      selectedPoll = polls[selected];
+      currentQuestion = 0;
+      answers = [];
+      document.getElementById('questions').style.display = 'block';
+      document.getElementById('result').innerText = '';
+      document.getElementById('shareSection').style.display = 'none';
+      renderQuestion(currentQuestion);
+    }
+
+    loadPoll();
+  </script>
+</body>
+</html>
